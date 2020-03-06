@@ -1,0 +1,12 @@
+{
+  "domain": "ATSalarm",
+  "name": "ATS-alarm",
+  "documentation": "https://github.com/kloknibor/ATS-alarm",
+  "requirements": [
+    ""
+  ],
+  "dependencies": [
+    ""
+  ],
+  "codeowners": ["kloknibor"]
+}

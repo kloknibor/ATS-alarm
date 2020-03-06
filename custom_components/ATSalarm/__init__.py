@@ -1,0 +1,1 @@
+"""The ATS-alarm component."""
