@@ -2,7 +2,7 @@
 import logging
 import re
 
-from RemcosMooiePythonAPI import RemsKnoei
+from ATSAPI import ATSalarm
 import voluptuous as vol
 
 import homeassistant.components.alarm_control_panel as alarm
@@ -26,15 +26,15 @@ import homeassistant.helpers.config_validation as cv
 
 _LOGGER = logging.getLogger(__name__)
 
-DEFAULT_NAME = "ATS-alarm"
+DEFAULT_NAME = "ATSalarm"
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
         vol.Required(CONF_alarmIP): cv.positive_int,
         vol.Required(CONF_alarmPort): cv.positive_int,
         vol.Required(CONF_alarmCode): cv.positive_int,
-        vol.Required(CONF_alarmPin): cv.positive_int
-        vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
+        vol.Required(CONF_alarmPin): cv.positive_int,
+        vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string
     }
 )
 
@@ -45,6 +45,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     alarmPort = config.get(CONF_alarmPort)
     alarmCode = config.get(CONF_alarmCode)
     AlarmPin = config.get(CONF_alarmPin)
+    name = "ATS alarm"
 
     atsalarm = ATSalarm(hass, name, alarmIP, alarmPort, alarmCode, AlarmPin)
     async_add_entities([atsalarm])
@@ -82,8 +83,6 @@ class ATSalarm(alarm.AlarmControlPanel):
         """Return the state of the device."""
         if self._alarm.state.lower() == "disarmed":
             return STATE_ALARM_DISARMED
-        if self._alarm.state.lower() == "armed stay":
-            return STATE_ALARM_ARMED_HOME
         if self._alarm.state.lower() == "armed away":
             return STATE_ALARM_ARMED_AWAY
         return None
@@ -91,7 +90,7 @@ class ATSalarm(alarm.AlarmControlPanel):
     @property
     def supported_features(self) -> int:
         """Return the list of supported features."""
-        return SUPPORT_ALARM_ARM_HOME | SUPPORT_ALARM_ARM_AWAY
+        return SUPPORT_ALARM_ARM_AWAY
 
     @property
     def device_state_attributes(self):
