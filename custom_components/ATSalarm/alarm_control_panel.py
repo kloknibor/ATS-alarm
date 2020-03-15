@@ -13,10 +13,6 @@ from homeassistant.components.alarm_control_panel.const import (
 )
 from homeassistant.const import (
     CONF_NAME,
-    CONF_alarmIP,
-    CONF_alarmPort,
-    CONF_alarmCode,
-    CONF_alarmPin,
     STATE_ALARM_ARMED_AWAY,
     STATE_ALARM_ARMED_HOME,
     STATE_ALARM_DISARMED,
@@ -26,14 +22,19 @@ import homeassistant.helpers.config_validation as cv
 
 _LOGGER = logging.getLogger(__name__)
 
-DEFAULT_NAME = "ATSalarm"
+CONF_alarmIP = 'alarmIP'
+CONF_alarmPort = 'alarmPort'
+CONF_alarmCode = 'alarmCode'
+CONF_alarmPin = 'alarmPin'
+
+DEFAULT_NAME = "ATS.alarm"
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
-        vol.Required(CONF_alarmIP): cv.positive_int,
-        vol.Required(CONF_alarmPort): cv.positive_int,
-        vol.Required(CONF_alarmCode): cv.positive_int,
-        vol.Required(CONF_alarmPin): cv.positive_int,
+        vol.Required(CONF_alarmIP): cv.string,
+        vol.Required(CONF_alarmPort): cv.string,
+        vol.Required(CONF_alarmCode): cv.string,
+        vol.Required(CONF_alarmPin): cv.string,
         vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string
     }
 )
@@ -44,17 +45,21 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     alarmIP = config.get(CONF_alarmIP)
     alarmPort = config.get(CONF_alarmPort)
     alarmCode = config.get(CONF_alarmCode)
-    AlarmPin = config.get(CONF_alarmPin)
+    alarmPin = config.get(CONF_alarmPin)
     name = "ATS alarm"
 
-    atsalarm = ATSalarm(hass, name, alarmIP, alarmPort, alarmCode, AlarmPin)
+    _LOGGER.error("this is the alarmPin : " + alarmPin)
+
+    atsalarm = ATSalarm(hass=hass, name=name, alarmIP=alarmIP, alarmPort=alarmPort, alarmCode=alarmCode, alarmPin=alarmPin)
     async_add_entities([atsalarm])
+
+    return true
 
 
 class ATSalarm(alarm.AlarmControlPanel):
     """Representation of an ATS alarm status."""
 
-    def __init__(self, hass, name, alarmIP, alarmPort, alarmCode, AlarmPin):
+    def __init__(self, hass, name, alarmIP, alarmPort, alarmCode, alarmPin):
         """Initialize the ATS alarm status."""
 
         _LOGGER.debug("Setting up ATS alarm...")
@@ -63,9 +68,9 @@ class ATSalarm(alarm.AlarmControlPanel):
         self._alarmIP = alarmIP
         self._alarmPort = alarmPort
         self._alarmCode = alarmCode
-        self._AlarmPin = AlarmPin
+        self._alarmPin = alarmPin
         self._state = None
-        self._alarm = ATSRemsding(alarmIP, alarmPort, alarmCode, AlarmPin, hass.loop)
+        self._alarm = ATSalarm(alarmIP=alarmIP, alarmPort=alarmPort, alarmCode=alarmCode, alarmPin=alarmPin, hass.loop)
 
     async def async_update(self):
         """Fetch the latest state."""
