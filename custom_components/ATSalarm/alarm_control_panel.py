@@ -48,34 +48,41 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     alarmPin = config.get(CONF_alarmPin)
     name = "ATS alarm"
 
-    _LOGGER.error("this is the alarmPin : " + alarmPin)
-
-    atsalarm = ATSalarm(hass=hass, name=name, alarmIP=alarmIP, alarmPort=alarmPort, alarmCode=alarmCode, alarmPin=alarmPin)
+    atsalarm = ATSalarmClass(hass=hass, name=name, alarmIP=alarmIP, alarmPort=alarmPort, alarmCode=alarmCode, alarmPin=alarmPin)
     async_add_entities([atsalarm])
 
-    return true
+    return True
 
 
-class ATSalarm(alarm.AlarmControlPanel):
+class ATSalarmClass(alarm.AlarmControlPanel):
     """Representation of an ATS alarm status."""
 
     def __init__(self, hass, name, alarmIP, alarmPort, alarmCode, alarmPin):
         """Initialize the ATS alarm status."""
 
-        _LOGGER.debug("Setting up ATS alarm...")
+        _LOGGER.info("Setting up ATS alarm...")
         self._hass = hass
+
         self._name = name
         self._alarmIP = alarmIP
         self._alarmPort = alarmPort
         self._alarmCode = alarmCode
         self._alarmPin = alarmPin
         self._state = None
-        self._alarm = ATSalarm(alarmIP=alarmIP, alarmPort=alarmPort, alarmCode=alarmCode, alarmPin=alarmPin, hass.loop)
+        self._alarm = ATSalarm(alarmIP=alarmIP, alarmPort=alarmPort, alarmCode=alarmCode, alarmPin=alarmPin, loop=hass.loop)
 
     async def async_update(self):
         """Fetch the latest state."""
-        await self._alarm.async_update()
-        return self._alarm.state
+        await self._alarm.Connect()
+        try:
+            if self._alarm.zoneStates[0]["status"] == 1:
+                return STATE_ALARM_DISARMED
+            if self._alarm.zoneStates[0]["status"] == 0:
+                return STATE_ALARM_ARMED_AWAY
+            return None
+        except:
+            return None
+
 
     @property
     def name(self):
@@ -86,35 +93,38 @@ class ATSalarm(alarm.AlarmControlPanel):
     @property
     def state(self):
         """Return the state of the device."""
-        if self._alarm.state.lower() == "disarmed":
-            return STATE_ALARM_DISARMED
-        if self._alarm.state.lower() == "armed away":
-            return STATE_ALARM_ARMED_AWAY
-        return None
+        try:
+            if self._alarm.zoneStates[0]["status"] == 1:
+                return STATE_ALARM_DISARMED
+            if self._alarm.zoneStates[0]["status"] == 0:
+                return STATE_ALARM_ARMED_AWAY
+            return None
+        except:
+            return None
 
     @property
     def supported_features(self) -> int:
         """Return the list of supported features."""
         return SUPPORT_ALARM_ARM_AWAY
 
-    @property
-    def device_state_attributes(self):
-        """Return the state attributes."""
-        return {"sensor_status": self._alarm.sensor_status}
+ #   @property
+ #   def device_state_attributes(self):
+ #       """Return the state attributes."""
+ #      return {"sensor_status": self._alarm. }
 
     async def async_alarm_disarm(self, code=None):
         """Send disarm command."""
-        if self._validate_code(code):
-            await self._alarm.async_alarm_disarm()
+        await self._alarm.disarm(zone=3)
 
     async def async_alarm_arm_home(self, code=None):
         """Send arm home command."""
-        if self._validate_code(code):
-            await self._alarm.async_alarm_arm_home()
+        await self._alarm.arm(zone=3)
 
     async def async_alarm_arm_away(self, code=None):
         """Send arm away command."""
-        if self._validate_code(code):
-            await self._alarm.async_alarm_arm_away()
+        await self._alarm.Connect()
+        _LOGGER.info(code)
+        _LOGGER.info(self._alarm.zoneStates)
+        await self._alarm.arm(zone=3)
 
 
