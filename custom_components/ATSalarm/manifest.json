@@ -2,7 +2,7 @@
   "domain": "atsalarm",
   "name": "atsalarmsystem",
   "documentation": "https://github.com/kloknibor/ATS-alarm",
-  "requirements": ["pyalarmdotcom==0.3.2","ATSAPI==0.4"],
+  "requirements": ["ATSAPI==0.4"],
   "dependencies": [],
   "codeowners": ["kloknibor"]
 }

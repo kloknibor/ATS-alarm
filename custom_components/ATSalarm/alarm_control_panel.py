@@ -1,12 +1,14 @@
 """Interfaces with ATS alarm control panels."""
 import logging
-import re
 
 from ATSAPI import ATSalarm
 import voluptuous as vol
 
-import homeassistant.components.alarm_control_panel as alarm
-from homeassistant.components.alarm_control_panel import PLATFORM_SCHEMA
+
+from homeassistant.components.alarm_control_panel import (
+    PLATFORM_SCHEMA,
+    AlarmControlPanelEntity)
+
 from homeassistant.components.alarm_control_panel.const import (
     SUPPORT_ALARM_ARM_AWAY,
     SUPPORT_ALARM_ARM_HOME,
@@ -20,14 +22,16 @@ from homeassistant.const import (
 
 import homeassistant.helpers.config_validation as cv
 
+
 _LOGGER = logging.getLogger(__name__)
 
-CONF_alarmIP = 'alarmIP'
-CONF_alarmPort = 'alarmPort'
-CONF_alarmCode = 'alarmCode'
-CONF_alarmPin = 'alarmPin'
+CONF_alarmIP = "alarmIP"
+CONF_alarmPort = "alarmPort"
+CONF_alarmCode = "alarmCode"
+CONF_alarmPin = "alarmPin"
+CONF_NAME = "name"
 
-DEFAULT_NAME = "ATS.alarm"
+DEFAULT_NAME = "ATS alarm"
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
     {
@@ -46,15 +50,19 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     alarmPort = config.get(CONF_alarmPort)
     alarmCode = config.get(CONF_alarmCode)
     alarmPin = config.get(CONF_alarmPin)
-    name = "ATS alarm"
+    name = config.get(CONF_NAME)
 
-    atsalarm = ATSalarmClass(hass=hass, name=name, alarmIP=alarmIP, alarmPort=alarmPort, alarmCode=alarmCode, alarmPin=alarmPin)
+    try:
+        atsalarm = ATSalarmDevice(hass=hass, name=name, alarmIP=alarmIP, alarmPort=alarmPort, alarmCode=alarmCode,
+                             alarmPin=alarmPin)
+    except:
+        _LOGGER.error("Authentication failed. Check settings")
     async_add_entities([atsalarm])
 
     return True
 
 
-class ATSalarmClass(alarm.AlarmControlPanel):
+class ATSalarmDevice(AlarmControlPanelEntity):
     """Representation of an ATS alarm status."""
 
     def __init__(self, hass, name, alarmIP, alarmPort, alarmCode, alarmPin):
@@ -69,11 +77,13 @@ class ATSalarmClass(alarm.AlarmControlPanel):
         self._alarmCode = alarmCode
         self._alarmPin = alarmPin
         self._state = None
-        self._alarm = ATSalarm(alarmIP=alarmIP, alarmPort=alarmPort, alarmCode=alarmCode, alarmPin=alarmPin, loop=hass.loop)
+        self._alarm = ATSalarm(alarmIP=alarmIP, alarmPort=alarmPort, alarmCode=alarmCode, alarmPin=alarmPin,
+                               loop=hass.loop)
 
     async def async_update(self):
         """Fetch the latest state."""
         await self._alarm.Connect()
+        _LOGGER.error("trying to update")
         try:
             if self._alarm.zoneStates[0]["status"] == 1:
                 return STATE_ALARM_DISARMED
@@ -81,6 +91,7 @@ class ATSalarmClass(alarm.AlarmControlPanel):
                 return STATE_ALARM_ARMED_AWAY
             return None
         except:
+            _LOGGER.error("Update failed")
             return None
 
 
@@ -122,9 +133,6 @@ class ATSalarmClass(alarm.AlarmControlPanel):
 
     async def async_alarm_arm_away(self, code=None):
         """Send arm away command."""
-        await self._alarm.Connect()
-        _LOGGER.info(code)
-        _LOGGER.info(self._alarm.zoneStates)
         await self._alarm.arm(zone=3)
 
 
